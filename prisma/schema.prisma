@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  id           String    @id @unique @default(cuid())
+  phone        String    @unique
+  fullname     String
+  confirmation Json?
+  telegramId   String    @unique
+  orders       Order[]
+  createdAt    DateTime? @default(now())
+}
+
+model Courier {
+  id        String   @id @unique @default(cuid())
+  phone     String
+  login     String   @unique
+  fullname  String
+  password  String
+  orders    Order[]
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id          String       @id @unique @default(cuid())
+  price       String
+  deliveryFee String
+  items       Item[]
+  location    String
+  status      OrderStatus? @default(CREATED)
+  client      Client?      @relation(fields: [clientId], references: [id])
+  courier     Courier?     @relation(fields: [courierId], references: [id])
+  createdAt   DateTime     @default(now())
+  clientId    String?
+  courierId   String?
+}
+
+model Item {
+  id          String   @id @unique @default(cuid())
+  name        String
+  size        String
+  price       String
+  img         String
+  description String?
+  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  Order       Order?  @relation(fields: [orderId], references: [id])
+  orderId     String?
+}
+
+model Category {
+  id        String   @id @unique @default(cuid())
+  name      ItemType
+  items     Item[]
+  createdAt DateTime @default(now())
+}
+
+enum ItemType {
+  Pizza
+  Drink
+  Sauce
+  Snack
+  Dessert
+}
+
+enum OrderStatus {
+  CREATED
+  COOKING
+  ONTHEWAY
+  ARRIVED
+  COMPLETED
+  CANCELLED_BY_CLIENT
+  CANCELLED_BY_COURIER
+  CANCELLED_BY_SERVER
+}
