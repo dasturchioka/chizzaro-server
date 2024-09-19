@@ -56,23 +56,28 @@ model Item {
   description String?
   category    Category @relation(fields: [categoryId], references: [id])
   categoryId  String
-  Order       Order?  @relation(fields: [orderId], references: [id])
+  Order       Order?   @relation(fields: [orderId], references: [id])
   orderId     String?
 }
 
 model Category {
   id        String   @id @unique @default(cuid())
-  name      ItemType
+  name      ItemType @unique
   items     Item[]
   createdAt DateTime @default(now())
 }
 
 enum ItemType {
   Pizza
-  Drink
-  Sauce
-  Snack
+  Ichimlik
+  Sous
+  Gazak
   Dessert
+  Burger
+  Lavash
+  Doner
+  Shaurma
+  Salat
 }
 
 enum OrderStatus {
