@@ -3,6 +3,6 @@ const { getAllItems, createItem, upload } = require('../controllers/item.control
 const router = express.Router()
 
 router.get('/get-all', getAllItems)
-router.post('/create', upload.single("image"), createItem)
+router.post('/create', upload.single("img"), createItem)
 
 module.exports = router
