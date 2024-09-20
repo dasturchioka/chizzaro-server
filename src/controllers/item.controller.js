@@ -24,8 +24,6 @@ async function getAllItems(req, res) {
 	}
 }
 
-console.log(__dirname)
-
 const tempDir = path.join(__dirname, '../../src/public/temp/')
 
 const storage = multer.diskStorage({
@@ -41,7 +39,6 @@ const storage = multer.diskStorage({
 const upload = multer({ storage })
 
 /**
- *
  * @param {express.Request} req
  * @param {express.Response} res
  * @returns
@@ -114,5 +111,26 @@ async function createItem(req, res) {
 	}
 }
 
+/**
+ * @param {express.Request} req
+ * @param {express.Response} res
+ * @returns
+ */
+async function getSingleItem(req, res) {
+	try {
+		const { id } = req.params
 
-module.exports = { getAllItems, createItem, upload }
+		const item = await prisma.item.findUnique({ where: { id }, include: { category: true } })
+
+		if (!item) {
+			return res.json({ status: 'bad', msg: "Ma'lumot topilmadi" })
+		}
+
+		return res.json({ status: 'ok', item })
+	} catch (error) {
+		console.log(error)
+		return res.status(500).json(error)
+	}
+}
+
+module.exports = { getAllItems, createItem, upload, getSingleItem }
