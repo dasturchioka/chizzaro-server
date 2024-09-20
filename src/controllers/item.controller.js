@@ -85,6 +85,9 @@ async function createItem(req, res) {
 		// Move the temp file to the final destination
 		await fs.copyFile(tempFile.name, finalDestination)
 
+		// Remove the original file from the temporary folder
+		await fs.unlink(req.file.path)
+
 		// Remove the temp file
 		await fs.unlink(tempFile.name)
 
@@ -110,5 +113,6 @@ async function createItem(req, res) {
 		return res.status(500).json({ message: 'Failed to create item' })
 	}
 }
+
 
 module.exports = { getAllItems, createItem, upload }
