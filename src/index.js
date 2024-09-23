@@ -14,7 +14,9 @@ const sslOptions = {
 	cert: fs.readFileSync(certPath),
 }
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',')
+const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+
+console.log(allowedOrigins);
 
 const app = express()
 const server = https.createServer(sslOptions, app)
@@ -37,7 +39,7 @@ app.use(
 app.get('/', (req, res) => {
 	return res.json({ msg: 'Hello world' })
 })
-
+	
 app.use('/api/v1/items', require('./routes/item.route'))
 app.use('/api/v1/category', require('./routes/category.route'))
 

@@ -1,5 +1,4 @@
 .env
 node_modules
-server.crt
-server.csr
-server.key
+./localhost-key.pem
+./localhost.pem
