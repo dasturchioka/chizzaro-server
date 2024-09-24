@@ -57,6 +57,7 @@ model Item {
   category    Category @relation(fields: [categoryId], references: [id])
   categoryId  String
   Order       Order?   @relation(fields: [orderId], references: [id])
+  sold        Int      @default(0)
   orderId     String?
 }
 

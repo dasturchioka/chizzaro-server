@@ -15,7 +15,9 @@ const prisma = new PrismaClient()
  */
 async function getAllItems(req, res) {
 	try {
-		const allItems = await prisma.category.findMany({ include: { items: true, _count: true } })
+		const allItems = await prisma.category.findMany({
+			include: { items: { include: { category: true } }, _count: true },
+		})
 
 		return res.json({ items: allItems })
 	} catch (error) {
@@ -44,7 +46,6 @@ const upload = multer({ storage })
  * @returns
  */
 async function createItem(req, res) {
-	console.log(req.file)
 	try {
 		const { name, size, price, description, category } = req.body
 
@@ -133,4 +134,117 @@ async function getSingleItem(req, res) {
 	}
 }
 
-module.exports = { getAllItems, createItem, upload, getSingleItem }
+/**
+ * @param {express.Request} req
+ * @param {express.Response} res
+ * @returns
+ */
+async function updateItem(req, res) {
+	try {
+		const { name, size, price, description, category, id } = req.body
+
+		if (req.file) {
+			const itemFound = await prisma.item.findUnique({ where: { id } })
+
+			await fs.unlink(path.join(__dirname, `../../src/public/${itemFound.img}`))
+
+			// Check the image size
+			const fileSizeInBytes = req.file.size // Get the file size in bytes
+			const fileSizeInKB = fileSizeInBytes / 1024 // Convert to KB
+
+			// Create a temp file using the tmp library
+			const tempFile = tmp.fileSync({ postfix: '.png' })
+
+			// Set the final destination for the resized image
+			const finalDir = path.join(__dirname, '../../src/public/items/')
+			const finalDestination = path.join(finalDir, req.file.filename)
+
+			if (fileSizeInKB > 100) {
+				// Check if the file size is greater than 100KB
+				// Use sharp to resize, maintain transparency, and compress
+				await sharp(req.file.path)
+					.resize({ width: 800 })
+					.webp({ quality: 70 }) // Adjust PNG compression level
+					.toFile(tempFile.name) // Save resized image to the temp file
+			} else {
+				// If the image is already below 100KB, just copy it
+				await fs.copyFile(req.file.path, tempFile.name)
+			}
+
+			// Move the temp file to the final destination
+			await fs.copyFile(tempFile.name, finalDestination)
+
+			// Remove the original file from the temporary folder
+			await fs.unlink(req.file.path)
+
+			// Remove the temp file
+			await fs.unlink(tempFile.name)
+
+			// Get the relative path to be saved in the database
+			const imgPath = `/items/${req.file.filename}`
+			const updatedItem = await prisma.item.update({
+				where: { id },
+				data: {
+					img: imgPath,
+					name,
+					price,
+					size,
+					description,
+					category: { connect: { name: category } },
+				},
+				include: { category: true },
+			})
+
+			return res.json({
+				item: updatedItem,
+				categoryId: updatedItem.categoryId,
+				msg: 'Mahsulot yangilandi',
+			})
+		}
+
+		const updatedItem = await prisma.item.update({
+			where: { id },
+			data: {
+				name,
+				price,
+				size,
+				description,
+				category: { connect: { name: category } },
+			},
+			include: { category: true },
+		})
+
+		return res.json({
+			item: updatedItem,
+			categoryId: updatedItem.categoryId,
+			msg: 'Mahsulot yangilandi',
+		})
+	} catch (error) {
+		console.error(error)
+		return res.status(500).json({ message: 'Failed to update item' })
+	}
+}
+
+/**
+ * @param {express.Request} req
+ * @param {express.Response} res
+ * @returns
+ */
+async function deleteItems(req, res) {
+	try {
+		const { items } = req.body
+
+		for (let i = 0; i < items.length; i++) {
+			await fs.unlink(path.join(__dirname, `../../src/public/${items[i].img}`))
+
+			await prisma.item.delete({ where: { id: items[i].id } })
+		}
+
+		return res.json({ status: 'ok', msg: "Mahsulotlar o'chirildi" })
+	} catch (error) {
+		console.error(error)
+		return res.status(500).json({ message: 'Failed to update item' })
+	}
+}
+
+module.exports = { getAllItems, createItem, upload, getSingleItem, updateItem, deleteItems }

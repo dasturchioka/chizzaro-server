@@ -32,9 +32,9 @@ async function createCategory(req, res) {
 			const category = allCategories.find(category => category.name === type)
 
 			if (!category) {
-				newTypes.push({ name: type, isOnTheBase: false })
+				newTypes.push({ name: type, isOnTheBase: false, id: '' })
 			} else {
-				newTypes.push({ name: type, isOnTheBase: true })
+				newTypes.push({ name: type, isOnTheBase: true, id: category.id })
 			}
 		}
 
@@ -65,9 +65,9 @@ async function getItemTypes(req, res) {
 			const category = allCategories.find(category => category.name === type)
 
 			if (!category) {
-				newTypes.push({ name: type, isOnTheBase: false })
+				newTypes.push({ name: type, isOnTheBase: false, id: '' })
 			} else {
-				newTypes.push({ name: type, isOnTheBase: true })
+				newTypes.push({ name: type, isOnTheBase: true, id: category.id })
 			}
 		}
 
@@ -78,4 +78,18 @@ async function getItemTypes(req, res) {
 	}
 }
 
-module.exports = { createCategory, getItemTypes }
+async function deleteCategory(req, res) {
+	try {
+		const { id } = req.params
+
+		await prisma.item.deleteMany({ where: { categoryId: id } })
+		await prisma.category.delete({ where: { id } })
+
+		return res.json({ msg: "Kategoriya va undagi barcha mahsulotlar o'chirildi" })
+	} catch (error) {
+		console.log(error)
+		return res.status(500).json(error)
+	}
+}
+
+module.exports = { createCategory, getItemTypes, deleteCategory }
