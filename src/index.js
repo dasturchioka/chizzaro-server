@@ -5,6 +5,10 @@ const { Server } = require('socket.io')
 const path = require('path')
 const fs = require('fs-extra')
 const cors = require('cors')
+const { socketStateManager } = require('./socket')
+const { PrismaClient } = require('@prisma/client')
+
+const prisma = new PrismaClient()
 
 const keyPath = path.join(__dirname, '../localhost-key.pem')
 const certPath = path.join(__dirname, '../localhost.pem')
@@ -33,6 +37,32 @@ app.use(
 		origin: allowedOrigins,
 	})
 )
+
+io.on('connection', socket => {
+	socket.on('connection:init', async data => {
+		await socketStateManager.addConnection({
+			socketId: socket.id,
+			socket: data.socket,
+			type: data.type,
+		})
+
+		const connectedSocket = await socketStateManager.getConnection({
+			socketId: socket.id,
+			type: data.type,
+		})
+
+		if (data.type === 'courier') {
+			await prisma.courier.update({ where: data.id, data: { status: 'IDLE' } })
+		}
+
+		socket.emit('connection:init-msg', { status: 'ok', msg: 'Connected', socket: connectedSocket })
+		return
+	})
+
+	socket.on('disconnect', () => {
+		console.log('user disconnected')
+	})
+})
 
 app.get('/', (req, res) => {
 	return res.json({ msg: 'Hello world' })
