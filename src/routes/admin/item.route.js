@@ -6,7 +6,8 @@ const {
 	getSingleItem,
 	updateItem,
 	deleteItems,
-} = require('../controllers/item.controller')
+} = require('../../controllers/admin/item.controller')
+
 const router = express.Router()
 
 router.get('/get-all', getAllItems)

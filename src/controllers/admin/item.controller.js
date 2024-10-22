@@ -26,7 +26,7 @@ async function getAllItems(req, res) {
 	}
 }
 
-const tempDir = path.join(__dirname, '../../src/public/temp/')
+const tempDir = path.join(__dirname, '../../public/temp/')
 
 const storage = multer.diskStorage({
 	destination: (req, file, cb) => {
@@ -65,7 +65,7 @@ async function createItem(req, res) {
 		const tempFile = tmp.fileSync({ postfix: '.png' })
 
 		// Set the final destination for the resized image
-		const finalDir = path.join(__dirname, '../../src/public/items/')
+		const finalDir = path.join(__dirname, '../../public/items/')
 		const finalDestination = path.join(finalDir, req.file.filename)
 
 		if (fileSizeInKB > 100) {
@@ -146,7 +146,9 @@ async function updateItem(req, res) {
 		if (req.file) {
 			const itemFound = await prisma.item.findUnique({ where: { id } })
 
-			await fs.unlink(path.join(__dirname, `../../src/public/${itemFound.img}`))
+			if (itemFound.img) {
+				await fs.unlink(path.join(__dirname, `../../public/${itemFound.img}`))
+			}
 
 			// Check the image size
 			const fileSizeInBytes = req.file.size // Get the file size in bytes
@@ -156,7 +158,7 @@ async function updateItem(req, res) {
 			const tempFile = tmp.fileSync({ postfix: '.png' })
 
 			// Set the final destination for the resized image
-			const finalDir = path.join(__dirname, '../../src/public/items/')
+			const finalDir = path.join(__dirname, '../../public/items/')
 			const finalDestination = path.join(finalDir, req.file.filename)
 
 			if (fileSizeInKB > 100) {

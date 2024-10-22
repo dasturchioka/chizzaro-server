@@ -3,7 +3,7 @@ const {
 	createCategory,
 	getItemTypes,
 	deleteCategory,
-} = require('../controllers/category.controller')
+} = require('../../controllers/admin/category.controller')
 const router = express.Router()
 
 router.post('/create', createCategory)

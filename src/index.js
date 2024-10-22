@@ -1,5 +1,5 @@
 require('dotenv').config()
-const https = require('https')
+const http = require('http')
 const express = require('express')
 const { Server } = require('socket.io')
 const path = require('path')
@@ -16,10 +16,8 @@ const sslOptions = {
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
 
-console.log(allowedOrigins);
-
 const app = express()
-const server = https.createServer(sslOptions, app)
+const server = http.createServer(app)
 const io = new Server(server, {
 	cors: {
 		origin: allowedOrigins,
@@ -39,10 +37,14 @@ app.use(
 app.get('/', (req, res) => {
 	return res.json({ msg: 'Hello world' })
 })
-	
-app.use('/api/v1/items', require('./routes/item.route'))
-app.use('/api/v1/category', require('./routes/category.route'))
 
+// admin
+app.use('/api/v1/admin/items', require('./routes/admin/item.route.js'))
+app.use('/api/v1/admin/category', require('./routes/admin/category.route.js'))
+app.use('/api/v1/admin/courier', require('./routes/admin/courier.route.js'))
+
+// courier
+app.use('/api/v1/courier/auth', require('./routes/courier/courier.route.js'))
 // Make sure to use server.listen instead of app.listen
 server.listen(process.env.PORT || 3000, () => {
 	console.log(`Server is running on port ${process.env.PORT || 3000}`)

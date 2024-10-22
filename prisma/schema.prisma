@@ -25,7 +25,7 @@ model Client {
 
 model Courier {
   id        String   @id @unique @default(cuid())
-  phone     String
+  phone     String   @unique
   login     String   @unique
   fullname  String
   password  String
@@ -39,6 +39,8 @@ model Order {
   deliveryFee String
   items       Item[]
   location    String
+  lat         String
+  lng         String
   status      OrderStatus? @default(CREATED)
   client      Client?      @relation(fields: [clientId], references: [id])
   courier     Courier?     @relation(fields: [courierId], references: [id])
