@@ -5,7 +5,14 @@ const { Server } = require('socket.io')
 const path = require('path')
 const fs = require('fs-extra')
 const cors = require('cors')
-const { socketStateManager } = require('./socket')
+const {
+	addConnectedUser,
+	checkUserExists,
+	connections,
+	removeConnectedUser,
+	countOnlineCouriers,
+	getUserById,
+} = require('./socket')
 const { PrismaClient } = require('@prisma/client')
 
 const prisma = new PrismaClient()
@@ -39,28 +46,138 @@ app.use(
 )
 
 io.on('connection', socket => {
+	console.log('New connection:', socket.id)
+
 	socket.on('connection:init', async data => {
-		await socketStateManager.addConnection({
-			socketId: socket.id,
-			socket: data.socket,
-			type: data.type,
-		})
+		try {
+			const userExists = await getUserById(data.user.id)
+			if (userExists.exists) {
+				socket.emit('connection:error', {
+					status: 'bad',
+					msg: "Faollik ishga tushmadi, bitta akkaunt bilan bir necha qurilmadan ulanishni imkoni yo'q",
+				})
+				return
+			}
+			if (!userExists.exists) {
+				console.log(data.user)
+				await addConnectedUser(data.user)
+			}
+			if (data.user.type === 'client') {
+				await prisma.client.update({
+					where: { id: data.user.id },
+					data: { status: 'IDLE' },
+				})
+			}
+			if (data.user.type === 'driver') {
+				await prisma.courier.update({
+					where: { login: data.user.login },
+					data: { status: 'IDLE' },
+				})
+			}
 
-		const connectedSocket = await socketStateManager.getConnection({
-			socketId: socket.id,
-			type: data.type,
-		})
+			const onlineCouriersWithMap = await countOnlineCouriers()
 
-		if (data.type === 'courier') {
-			await prisma.courier.update({ where: data.id, data: { status: 'IDLE' } })
+			// Emit to all connected users including the newly connected one
+			io.emit('info:online-couriers', {
+				mapCount: onlineCouriersWithMap,
+			})
+
+			socket.emit('message:connection-confirmed', {
+				msg: 'Faollik yoqildi, server bilan aloqa mavjud',
+			})
+
+			console.log('Current connections:', connections)
+		} catch (error) {
+			console.log(error)
+			socket.emit('connection:error', {
+				status: 'bad',
+				msg: error.message,
+			})
+			console.error('Error during connection:init', error.message)
 		}
-
-		socket.emit('connection:init-msg', { status: 'ok', msg: 'Connected', socket: connectedSocket })
-		return
 	})
 
-	socket.on('disconnect', () => {
-		console.log('user disconnected')
+	socket.on('connection:disconnect', async () => {
+		console.log('connection:disconnect => ', new Date().toISOString())
+		try {
+			const userExists = await checkUserExists(socket.id)
+			if (userExists.exists) {
+				await removeConnectedUser(socket.id)
+				if (userExists.user.userType === 'client') {
+					await prisma.client.update({
+						where: { id: userExists.user.userId },
+						data: { status: 'OFFLINE' },
+					})
+				}
+				if (userExists.user.userType === 'courier') {
+					await prisma.courier.update({
+						where: { login: userExists.user.userLogin },
+						data: { status: 'OFFLINE' },
+					})
+				}
+				socket.emit('message:disconnection-confirmed', {
+					msg: 'Faollik uzildi',
+					...userExists.user,
+					status: 'OFFLINE',
+				})
+
+				const onlineCouriersWithMap = await countOnlineCouriers()
+
+				// Emit to all connected users including the newly connected one
+				io.emit('info:online-couriers', {
+					mapCount: onlineCouriersWithMap,
+				})
+				socket.disconnect()
+				console.log('Current connections:', connections)
+			} else {
+				return
+			}
+		} catch (error) {
+			console.error('Error during disconnect', error)
+		}
+	})
+
+	socket.on('order:created', async data => {
+		// when client ordered for a food
+	})
+
+	socket.on('disconnect', async () => {
+		console.log('blank disconnection detected => ', new Date().toISOString())
+		try {
+			const userExists = await checkUserExists(socket.id)
+			if (userExists.exists) {
+				await removeConnectedUser(socket.id)
+				if (userExists.user.userType === 'client') {
+					await prisma.client.update({
+						where: { id: userExists.user.userId },
+						data: { status: 'OFFLINE' },
+					})
+				}
+				if (userExists.user.userType === 'courier') {
+					await prisma.courier.update({
+						where: { login: userExists.user.userLogin },
+						data: { status: 'OFFLINE' },
+					})
+				}
+				socket.emit('message:disconnection-confirmed', {
+					msg: 'Faollik uzildi',
+					...userExists.user,
+					status: 'OFFLINE',
+				})
+
+				const onlineCouriersWithMap = await countOnlineCouriers()
+
+				// Emit to all connected users including the newly connected one
+				io.emit('info:online-couriers', {
+					mapCount: onlineCouriersWithMap,
+				})
+				console.log('Current connections:', connections)
+			} else {
+				return
+			}
+		} catch (error) {
+			console.error('Error during disconnect', error)
+		}
 	})
 })
 
@@ -74,7 +191,8 @@ app.use('/api/v1/admin/category', require('./routes/admin/category.route.js'))
 app.use('/api/v1/admin/courier', require('./routes/admin/courier.route.js'))
 
 // courier
-app.use('/api/v1/courier/auth', require('./routes/courier/courier.route.js'))
+app.use('/api/v1/courier/auth', require('./routes/courier/auth.route.js'))
+app.use('/api/v1/courier/profile', require('./routes/courier/profile.route.js'))
 // Make sure to use server.listen instead of app.listen
 server.listen(process.env.PORT || 3000, () => {
 	console.log(`Server is running on port ${process.env.PORT || 3000}`)

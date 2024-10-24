@@ -1,47 +1,60 @@
-class SocketStateManager {
-	constructor() {
-		this.connections = {
-			admin: {},
-			courier: {},
-			client: {},
-		}
-	}
+const connections = new Map()
 
-	async addConnection({ type, socketId, socket }) {
-		if (!this.connections[type]) {
-			throw new Error(`Invalid connection type: ${type}`)
-		}
-		if (type === 'admin') {
-			this.connections[type] = socket
-		} else {
-			this.connections[type][socketId] = socket
-		}
-	}
+// Connections
+async function addConnectedUser(user) {
+	connections.set(user.socketId, {
+		userLogin: user.login,
+		userType: user.type,
+		userSocketId: user.socketId,
+		userId: user.id,
+		userDetails: user.details,
+	})
 
-	async removeConnection({ type, socketId }) {
-		if (!this.connections[type]) {
-			throw new Error(`Invalid connection type: ${type}`)
-		}
-		if (type === 'admin') {
-			this.connections[type] = {}
-		} else {
-			delete this.connections[type][socketId]
-		}
-	}
+	const addedUser = connections.get(user.socketId)
 
-	async getConnection({ type, socketId }) {
-		console.log(`All connections: `, this.connections[type])
-
-		if (!this.connections[type]) {
-			throw new Error(`Invalid connection type: ${type}`)
-		}
-		if (type === 'admin') {
-			return this.connections[type]
-		} else {
-			return this.connections[type][socketId]
-		}
-	}
+	return { user: addedUser }
 }
 
-const socketStateManager = new SocketStateManager()
-module.exports = { socketStateManager }
+async function checkUserExists(socketId) {
+	const userExists = connections.get(socketId)
+
+	if (!userExists) {
+		return { exists: false }
+	}
+
+	return { exists: true, user: userExists }
+}
+
+async function getUserById(userId) {
+	for (const [, user] of connections) {
+		if (user.userId === userId) {
+			return { exists: true, user }
+		}
+	}
+	return { exists: false }
+}
+
+async function removeConnectedUser(socketId) {
+	const removed = connections.delete(socketId)
+	console.log(`Removed: ${removed}`)
+	return
+}
+
+async function countOnlineCouriers() {
+	let count = 0
+	connections.forEach(value => {
+		if (value.userType === 'courier') {
+			count++
+		}
+	})
+	return count
+}
+
+module.exports = {
+	connections,
+	addConnectedUser,
+	removeConnectedUser,
+	checkUserExists,
+	countOnlineCouriers,
+	getUserById,
+}
