@@ -12,6 +12,7 @@ const {
   removeConnectedUser,
   countOnlineCouriers,
   getUserById,
+  removeUserById,
 } = require("./socket");
 const { PrismaClient } = require("@prisma/client");
 
@@ -54,11 +55,7 @@ io.on("connection", (socket) => {
     try {
       const userExists = await getUserById(data.user.id);
       if (userExists.exists) {
-        socket.emit("connection:error", {
-          status: "bad",
-          msg: "Faollik ishga tushmadi, bitta akkaunt bilan bir necha qurilmadan ulanishni imkoni yo'q",
-        });
-        return;
+        await removeUserById(data.user.id);
       }
       if (!userExists.exists) {
         console.log(data.user);
