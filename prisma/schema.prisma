@@ -22,6 +22,7 @@ model Client {
   telegramId   String       @unique
   orders       Order[]
   createdAt    DateTime?    @default(now())
+  locations    Location[]
 }
 
 model Courier {
@@ -64,6 +65,15 @@ model Item {
   Order       Order?   @relation(fields: [orderId], references: [id])
   sold        Int      @default(0)
   orderId     String?
+}
+
+model Location {
+  id          String  @id @unique @default(cuid())
+  displayName String
+  lat         String
+  lng         String
+  Client      Client? @relation(fields: [clientId], references: [id])
+  clientId    String?
 }
 
 model Category {
