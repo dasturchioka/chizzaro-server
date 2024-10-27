@@ -27,6 +27,7 @@ const sslOptions = {
 }
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+console.log(allowedOrigins)
 
 const app = express()
 const server = http.createServer(app)
