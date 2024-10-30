@@ -32,35 +32,35 @@ async function login(req, res) {
 				},
 			})
 
-			const resultSms = await sendMessage({
-				phone,
-				message: `Chizzaro pizza telegram boti uchun tasdiqlash kodingiz: ${newCode}`,
-			})
+			// const resultSms = await sendMessage({
+			// 	phone,
+			// 	message: `Chizzaro pizza telegram boti uchun tasdiqlash kodingiz: ${newCode}`,
+			// })
 
-			if (resultSms.status !== 'ok') {
-				return res.json({
-					status: 'bad',
-					msg: "Tasdiqlash kodini yuborishda xatolik yuzaga keldi, boshqatdan urinib ko'ring",
-					resultSms,
-				})
-			}
+			// if (resultSms.status !== 'ok') {
+			// 	return res.json({
+			// 		status: 'bad',
+			// 		msg: "Tasdiqlash kodini yuborishda xatolik yuzaga keldi, boshqatdan urinib ko'ring",
+			// 		resultSms,
+			// 	})
+			// }
 
 			return res.json({ status: 'ok', msg: 'Tasdiqlash kodi yuborildi' })
 		}
 
 		if (!existClient.confirmation.confirmed && existClient.confirmation.code) {
-			const resultSms = await sendMessage({
-				phone,
-				message: `Chizzaro pizza telegram boti uchun tasdiqlash kodingiz: ${existClient.confirmation.code}`,
-			})
+			// const resultSms = await sendMessage({
+			// 	phone,
+			// 	message: `Chizzaro pizza telegram boti uchun tasdiqlash kodingiz: ${existClient.confirmation.code}`,
+			// })
 
-			if (resultSms.status !== 'ok') {
-				return res.json({
-					status: 'bad',
-					msg: "Tasdiqlash kodini yuborishda xatolik yuzaga keldi, boshqatdan urinib ko'ring",
-					resultSms,
-				})
-			}
+			// if (resultSms.status !== 'ok') {
+			// 	return res.json({
+			// 		status: 'bad',
+			// 		msg: "Tasdiqlash kodini yuborishda xatolik yuzaga keldi, boshqatdan urinib ko'ring",
+			// 		resultSms,
+			// 	})
+			// }
 
 			return res.json({ status: 'ok', msg: 'Tasdiqlash kodi yuborildi' })
 		}
@@ -72,18 +72,18 @@ async function login(req, res) {
 			data: { confirmation: { confirmed: false, code: newCode } },
 		})
 
-		const resultSms = await sendMessage({
-			phone,
-			message: `Chizzaro pizza telegram boti uchun tasdiqlash kodingiz: ${existClient.confirmation.code}`,
-		})
+		// const resultSms = await sendMessage({
+		// 	phone,
+		// 	message: `Chizzaro pizza telegram boti uchun tasdiqlash kodingiz: ${existClient.confirmation.code}`,
+		// })
 
-		if (resultSms.status !== 'ok') {
-			return res.json({
-				status: 'bad',
-				msg: "Tasdiqlash kodini yuborishda xatolik yuzaga keldi, boshqatdan urinib ko'ring",
-				resultSms,
-			})
-		}
+		// if (resultSms.status !== 'ok') {
+		// 	return res.json({
+		// 		status: 'bad',
+		// 		msg: "Tasdiqlash kodini yuborishda xatolik yuzaga keldi, boshqatdan urinib ko'ring",
+		// 		resultSms,
+		// 	})
+		// }
 
 		return res.json({ status: 'ok', msg: 'Tasdiqlash kodi yuborildi' })
 	} catch (error) {
@@ -101,7 +101,9 @@ async function confirmLogin(req, res) {
 	try {
 		const { phone, code } = req.body
 
-		const existClient = await prisma.client.findUnique({ where: { phone } })
+		const existClient = await prisma.client.findUnique({
+			where: { phone },
+		})
 
 		if (!existClient) {
 			return res.json({ status: 'bad', msg: 'Bu telefonga ega mijoz akkaunti topilmadi' })
@@ -119,6 +121,7 @@ async function confirmLogin(req, res) {
 
 		const updatedClient = await prisma.client.update({
 			where: { phone },
+			include: { locations: true },
 			data: { confirmation: { confirmed: true, code: '' } },
 		})
 
@@ -128,7 +131,9 @@ async function confirmLogin(req, res) {
 			status: 'ok',
 			msg: "Muvafaqqiyatli ro'yxatdan o'tildi",
 			token: newToken,
+			locations: updatedClient.locations,
 			profile: updatedClient,
+			id: updatedClient.id,
 		})
 	} catch (error) {
 		console.log(error)

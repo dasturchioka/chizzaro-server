@@ -196,6 +196,8 @@ app.use('/api/v1/courier/profile', require('./routes/courier/profile.route.js'))
 app.use('/api/v1/client/auth', require('./routes/client/auth.route.js'))
 app.use('/api/v1/client/items', require('./routes/client/item.route.js'))
 app.use('/api/v1/client/category', require('./routes/client/category.route.js'))
+app.use('/api/v1/client/profile', require('./routes/client/profile.route.js'))
+app.use('/api/v1/client/locations', require('./routes/client/locations.route.js'))
 
 // Make sure to use server.listen instead of app.listen
 server.listen(process.env.PORT || 3000, () => {

@@ -1,10 +1,5 @@
 const { PrismaClient } = require('@prisma/client')
-const tmp = require('tmp')
 const express = require('express')
-const multer = require('multer')
-const fs = require('fs').promises
-const path = require('path')
-const sharp = require('sharp')
 
 const prisma = new PrismaClient()
 

@@ -7,14 +7,14 @@ async function sendMessage({ phone, message }) {
 	try {
 		const data = new FormData()
 		data.append('mobile_phone', phone)
-		data.append('message', message)
+		data.append('message', 'Bu Eskiz dan test')
 		data.append('from', '4546')
 
 		const response = await axios.post('https://notify.eskiz.uz/api/message/sms/send', data, {
 			headers: { Authorization: `Bearer ${ESKIZ_SMS_API_TOKEN}`, ...data.getHeaders() },
 		})
 
-		console.log(response)
+		console.log(response.data)
 
 		if (!response || response.status >= 400) {
 			return {
