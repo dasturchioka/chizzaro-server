@@ -11,6 +11,7 @@ async function addConnectedUser(user) {
     userType: user.type,
     userSocketId: user.socketId,
     userId: user.id,
+    telegramId: user.telegramId,
     userDetails: user.details,
   });
 

@@ -1,5 +1,5 @@
 async function generateCode() {
-  return Math.floor(Math.random() * 99999).toString();
+	return String(Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000)
 }
 
-module.exports = { generateCode };
+module.exports = { generateCode }

@@ -36,7 +36,6 @@ const io = new Server(server, {
 		origin: allowedOrigins,
 	},
 })
-global.io = io
 
 app.options('*', cors()) // Preflight requests
 app.use(express.json())
@@ -54,7 +53,18 @@ io.on('connection', socket => {
 		try {
 			const userExists = await getUserById(data.user.id)
 			if (userExists.exists) {
-				await removeUserById(data.user.id)
+				if (data.user.type === 'client') {
+					await prisma.client.update({
+						where: { id: data.user.id },
+						data: { telegramId: data.user.telegramId },
+					})
+				}
+				socket.emit('connection:lose', {
+					type: 'disconnect',
+					msg: 'User trying to connect with multiple devices',
+				})
+				await removeConnectedUser(userExists.user.userSocketId)
+				await addConnectedUser(data.user)
 			}
 			if (!userExists.exists) {
 				console.log(data.user)
@@ -66,19 +76,21 @@ io.on('connection', socket => {
 					data: { status: 'IDLE' },
 				})
 			}
-			if (data.user.type === 'driver') {
+			if (data.user.type === 'courier') {
 				await prisma.courier.update({
 					where: { login: data.user.login },
 					data: { status: 'IDLE' },
 				})
 			}
 
-			const onlineCouriersWithMap = await countOnlineCouriers()
+			if (data.user.type === 'courier') {
+				const onlineCouriersWithMap = await countOnlineCouriers()
 
-			// Emit to all connected users including the newly connected one
-			io.emit('info:online-couriers', {
-				mapCount: onlineCouriersWithMap,
-			})
+				// Emit to all connected users including the newly connected one
+				io.emit('info:online-couriers', {
+					mapCount: onlineCouriersWithMap,
+				})
+			}
 
 			socket.emit('message:connection-confirmed', {
 				msg: 'Faollik yoqildi, server bilan aloqa mavjud',
@@ -177,6 +189,8 @@ io.on('connection', socket => {
 			console.error('Error during disconnect', error)
 		}
 	})
+
+	app.set('socket', socket)
 })
 
 app.get('/', (req, res) => {

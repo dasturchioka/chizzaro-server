@@ -33,24 +33,25 @@ model Courier {
   status    CourierStatus
   password  String
   orders    Order[]
+  card      String
   createdAt DateTime      @default(now())
 }
 
 model Order {
-  id          String       @id @unique @default(cuid())
-  price       String
-  deliveryFee String
-  items       Item[]
-  location    String
-  lat         String
-  lng         String
-  distance    String // in km
-  status      OrderStatus? @default(CREATED)
-  client      Client?      @relation(fields: [clientId], references: [id])
-  courier     Courier?     @relation(fields: [courierId], references: [id])
-  createdAt   DateTime     @default(now())
-  clientId    String?
-  courierId   String?
+  id            String             @id @unique @default(cuid())
+  price         String
+  deliveryFee   String
+  items         Item[]
+  location      Location           @relation(fields: [locationId], references: [id])
+  distance      String? // in km
+  status        OrderStatus?       @default(CREATED)
+  paymentMethod OrderPaymentMethod
+  client        Client?            @relation(fields: [clientId], references: [id])
+  courier       Courier?           @relation(fields: [courierId], references: [id])
+  createdAt     DateTime           @default(now())
+  clientId      String?
+  courierId     String?
+  locationId    String
 }
 
 model Item {
@@ -74,6 +75,7 @@ model Location {
   lng         String
   Client      Client? @relation(fields: [clientId], references: [id])
   clientId    String?
+  Order       Order[]
 }
 
 model Category {
@@ -97,6 +99,7 @@ enum ItemType {
 }
 
 enum OrderStatus {
+  CREATING
   CREATED
   COOKING
   COOKED
@@ -116,4 +119,9 @@ enum CourierStatus {
 enum ClientStatus {
   IDLE
   OFFLINE
+}
+
+enum OrderPaymentMethod {
+  CARD
+  CASH
 }
